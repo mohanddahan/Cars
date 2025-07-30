@@ -1,0 +1,1113 @@
+﻿<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سباق السيارات السريع</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            background: #000;
+            min-height: 100vh;
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+            touch-action: manipulation;
+        }
+        
+        #startScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('https://images.unsplash.com/photo-1504215680853-026ed2a45def?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80') no-repeat center center;
+            background-size: cover;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            color: white;
+            text-align: center;
+        }
+        
+        .start-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: -1;
+        }
+        
+        .start-title {
+            font-size: 3.5rem;
+            margin-bottom: 1.5rem;
+            color: #fff;
+            text-shadow: 0 0 15px rgba(255, 196, 0, 0.8);
+            animation: pulse 2s infinite;
+        }
+        
+        .start-subtitle {
+            font-size: 1.2rem;
+            margin-bottom: 3rem;
+            color: #ccc;
+            max-width: 80%;
+        }
+        
+        .start-btn {
+            background: linear-gradient(135deg, #f8bb22, #f37335);
+            border: none;
+            padding: 18px 50px;
+            font-size: 1.5rem;
+            color: white;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 8px 25px rgba(243, 115, 53, 0.6);
+            transition: all 0.3s;
+            font-weight: bold;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .start-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 30px rgba(243, 115, 53, 0.8);
+        }
+        
+        .game-container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+            display: none;
+        }
+        
+        #gameCanvas {
+            display: block;
+            background: linear-gradient(to bottom, #1a1a1a, #2d2d2d);
+        }
+        
+        .hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            color: white;
+            font-size: 1.2rem;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 12px 25px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .hud-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .hud-icon {
+            width: 24px;
+            height: 24px;
+        }
+        
+        .game-over {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            color: white;
+            text-align: center;
+        }
+        
+        .game-over h2 {
+            font-size: 3.5rem;
+            color: #f8bb22;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 10px rgba(248, 187, 34, 0.7);
+        }
+        
+        .final-score {
+            font-size: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .restart-btn {
+            background: linear-gradient(135deg, #f8bb22, #f37335);
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.3rem;
+            color: white;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 8px 25px rgba(243, 115, 53, 0.6);
+            transition: all 0.3s;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+        
+        .shop-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+            color: white;
+            padding: 20px;
+        }
+        
+        .shop-title {
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            color: #f8bb22;
+        }
+        
+        .cars-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            max-width: 800px;
+            margin-bottom: 30px;
+        }
+        
+        .car-item {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+        
+        .car-item:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .car-item.selected {
+            border-color: #f8bb22;
+            box-shadow: 0 0 15px rgba(248, 187, 34, 0.5);
+        }
+        
+        .car-image {
+            width: 100px;
+            height: 180px;
+            margin-bottom: 10px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+        
+        .car-name {
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+        }
+        
+        .car-price {
+            font-size: 1rem;
+            color: #f8bb22;
+            margin-bottom: 10px;
+        }
+        
+        .car-stats {
+            font-size: 0.9rem;
+            color: #ccc;
+            text-align: center;
+        }
+        
+        .shop-buttons {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .shop-btn {
+            background: linear-gradient(135deg, #f8bb22, #f37335);
+            border: none;
+            padding: 12px 30px;
+            font-size: 1.1rem;
+            color: white;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(243, 115, 53, 0.4);
+            transition: all 0.3s;
+        }
+        
+        .shop-btn.secondary {
+            background: linear-gradient(135deg, #6b7280, #4b5563);
+        }
+        
+        .shop-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(243, 115, 53, 0.6);
+        }
+        
+        .coin {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23FFD700"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.31-8.86c-1.77-.45-2.34-.94-2.34-1.67 0-.84.79-1.43 2.1-1.43 1.38 0 1.9.66 1.94 1.64h1.71c-.05-1.34-.87-2.57-2.49-2.97V5H10.9v1.69c-1.51.32-2.72 1.3-2.72 2.81 0 1.79 1.49 2.69 3.66 3.21 1.95.46 2.34 1.15 2.34 1.87 0 .53-.39 1.39-2.1 1.39-1.6 0-2.23-.72-2.32-1.64H8.04c.1 1.7 1.36 2.66 2.86 2.97V19h2.34v-1.67c1.52-.29 2.72-1.16 2.73-2.77-.01-2.2-1.9-2.96-3.66-3.42z"/></svg>') no-repeat center;
+            background-size: contain;
+            z-index: 5;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        @media (max-width: 768px) {
+            .start-title {
+                font-size: 2.5rem;
+            }
+            
+            .start-subtitle {
+                font-size: 1rem;
+            }
+            
+            .start-btn {
+                padding: 15px 40px;
+                font-size: 1.2rem;
+            }
+            
+            .hud {
+                font-size: 1rem;
+                padding: 10px 15px;
+            }
+            
+            .game-over h2 {
+                font-size: 2.5rem;
+            }
+            
+            .final-score {
+                font-size: 1.5rem;
+            }
+            
+            .cars-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .shop-title {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="startScreen">
+        <div class="start-overlay"></div>
+        <h1 class="start-title">سباق السيارات السريع</h1>
+        <p class="start-subtitle">اجمع النقود، اشتر سيارات أسرع، وكن الأفضل في المضمار!</p>
+        <button class="start-btn" id="startBtn">ابدأ السباق</button>
+    </div>
+    
+    <div class="game-container">
+        <canvas id="gameCanvas"></canvas>
+        
+        <div class="hud">
+            <div class="hud-item">
+                <svg class="hud-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                <span id="score">0</span>
+            </div>
+            <div class="hud-item">
+                <svg class="hud-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                <span id="coins">0</span>
+            </div>
+            <div class="hud-item">
+                <svg class="hud-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span id="time">0</span>
+            </div>
+        </div>
+        
+        <div class="game-over" id="gameOver">
+            <h2>انتهت اللعبة!</h2>
+            <div class="final-score">نقاطك النهائية: <span id="finalScore">0</span></div>
+            <div class="final-score">النقود المجموعة: <span id="finalCoins">0</span></div>
+            <button class="restart-btn" id="restartBtn">العب مجدداً</button>
+            <button class="restart-btn" id="shopBtn" style="margin-top: 15px; background: linear-gradient(135deg, #4f46e5, #7c3aed);">متجر السيارات</button>
+        </div>
+        
+        <div class="shop-screen" id="shopScreen">
+            <h2 class="shop-title">متجر السيارات</h2>
+            <div class="cars-grid" id="carsGrid">
+                <!-- يتم ملؤه بالسيارات المتاحة -->
+            </div>
+            <div class="shop-buttons">
+                <button class="shop-btn secondary" id="backToGameBtn">العودة للعبة</button>
+                <button class="shop-btn" id="buyCarBtn">شراء السيارة</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // عناصر DOM
+        const startScreen = document.getElementById('startScreen');
+        const startBtn = document.getElementById('startBtn');
+        const gameContainer = document.querySelector('.game-container');
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+        const coinsElement = document.getElementById('coins');
+        const timeElement = document.getElementById('time');
+        const gameOverScreen = document.getElementById('gameOver');
+        const finalScoreElement = document.getElementById('finalScore');
+        const finalCoinsElement = document.getElementById('finalCoins');
+        const restartBtn = document.getElementById('restartBtn');
+        const shopBtn = document.getElementById('shopBtn');
+        const shopScreen = document.getElementById('shopScreen');
+        const carsGrid = document.getElementById('carsGrid');
+        const backToGameBtn = document.getElementById('backToGameBtn');
+        const buyCarBtn = document.getElementById('buyCarBtn');
+        
+        // ضبط حجم اللوحة
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        
+        // تعريف السيارات المتاحة للشراء
+        const availableCars = [
+            {
+                id: 1,
+                name: "سيارة مبتدئ",
+                color: "#3498db",
+                price: 0,
+                speed: 15,
+                acceleration: 0.2,
+                owned: true,
+                selected: true
+            },
+            {
+                id: 2,
+                name: "سيارة سريعة",
+                color: "#e74c3c",
+                price: 500,
+                speed: 20,
+                acceleration: 0.3,
+                owned: false,
+                selected: false
+            },
+            {
+                id: 3,
+                name: "سيارة فاخرة",
+                color: "#2ecc71",
+                price: 1000,
+                speed: 25,
+                acceleration: 0.4,
+                owned: false,
+                selected: false
+            },
+            {
+                id: 4,
+                name: "سيارة سباق",
+                color: "#f1c40f",
+                price: 2000,
+                speed: 30,
+                acceleration: 0.5,
+                owned: false,
+                selected: false
+            },
+            {
+                id: 5,
+                name: "سيارة خارقة",
+                color: "#9b59b6",
+                price: 5000,
+                speed: 35,
+                acceleration: 0.6,
+                owned: false,
+                selected: false
+            },
+            {
+                id: 6,
+                name: "سيارة الأسطورة",
+                color: "#1abc9c",
+                price: 10000,
+                speed: 40,
+                acceleration: 0.7,
+                owned: false,
+                selected: false
+            }
+        ];
+        
+        let selectedCarId = 1;
+        let playerCar = {...availableCars[0]};
+        
+        // متغيرات اللعبة
+        let player = {
+            x: 0,
+            y: 0,
+            width: 60,
+            height: 110,
+            speed: 0,
+            maxSpeed: playerCar.speed,
+            acceleration: playerCar.acceleration,
+            deceleration: 0.15,
+            rotation: 0,
+            targetX: 0
+        };
+        
+        let score = 0;
+        let coins = 0;
+        let gameTime = 0;
+        let gameRunning = false;
+        let baseRoadSpeed = 5;
+        let roadMarkings = [];
+        let cars = [];
+        let coinsOnRoad = [];
+        let lastCarTime = 0;
+        let lastCoinTime = 0;
+        let touchX = null;
+        let animationId = null;
+        let lastTime = 0;
+        let gameStartTime = 0;
+        let difficultyInterval;
+        
+        // صور السيارات
+        const carImages = {};
+        
+        // إنشاء صور السيارات
+        function createCarImages() {
+            availableCars.forEach(car => {
+                carImages[car.id] = createCarImage(car.color, car.id === selectedCarId);
+            });
+        }
+        
+        // إنشاء صورة سيارة
+        function createCarImage(color, isPlayer = false) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 60;
+            canvas.height = 110;
+            const ctx = canvas.getContext('2d');
+            
+            // هيكل السيارة
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(10, 10);
+            ctx.lineTo(50, 10);
+            ctx.quadraticCurveTo(58, 15, 58, 25);
+            ctx.lineTo(58, 85);
+            ctx.quadraticCurveTo(58, 95, 50, 100);
+            ctx.lineTo(10, 100);
+            ctx.quadraticCurveTo(2, 95, 2, 85);
+            ctx.lineTo(2, 25);
+            ctx.quadraticCurveTo(2, 15, 10, 10);
+            ctx.closePath();
+            ctx.fill();
+            
+            // خطوط تصميم السيارة
+            ctx.strokeStyle = isPlayer ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(15, 15);
+            ctx.lineTo(45, 15);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(15, 95);
+            ctx.lineTo(45, 95);
+            ctx.stroke();
+            
+            // النوافذ
+            ctx.fillStyle = isPlayer ? 'rgba(200, 230, 255, 0.8)' : 'rgba(165, 216, 255, 0.7)';
+            ctx.fillRect(18, 15, 24, 25);
+            ctx.fillRect(18, 60, 24, 25);
+            
+            // المصابيح الأمامية
+            ctx.fillStyle = '#fffac8';
+            ctx.beginPath();
+            ctx.arc(50, 25, 4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(50, 85, 4, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // العجلات
+            ctx.fillStyle = '#1a1a1a';
+            ctx.beginPath();
+            ctx.arc(15, 25, 8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(15, 85, 8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(45, 25, 8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(45, 85, 8, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // تفاصيل العجلات
+            ctx.fillStyle = '#333';
+            ctx.beginPath();
+            ctx.arc(15, 25, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(15, 85, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(45, 25, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(45, 85, 5, 0, Math.PI * 2);
+            ctx.fill();
+            
+            return canvas;
+        }
+        
+        // تهيئة اللعبة
+        function initGame() {
+            player.x = canvas.width / 2 - player.width / 2;
+            player.y = canvas.height - player.height - 40;
+            player.speed = 0;
+            player.targetX = player.x;
+            player.maxSpeed = playerCar.speed;
+            player.acceleration = playerCar.acceleration;
+            
+            score = 0;
+            coins = 0;
+            gameTime = 0;
+            baseRoadSpeed = 5;
+            roadMarkings = [];
+            cars = [];
+            coinsOnRoad = [];
+            lastCarTime = 0;
+            lastCoinTime = 0;
+            gameRunning = true;
+            gameStartTime = Date.now();
+            
+            // تهيئة علامات الطريق
+            for (let i = 0; i < 20; i++) {
+                roadMarkings.push({
+                    x: canvas.width / 2 - 2,
+                    y: i * 80 - 80,
+                    width: 4,
+                    height: 40
+                });
+            }
+            
+            // بدء زيادة الصعوبة كل 15 ثانية
+            clearInterval(difficultyInterval);
+            difficultyInterval = setInterval(increaseDifficulty, 15000);
+            
+            updateUI();
+            createCarImages();
+        }
+        
+        // زيادة صعوبة اللعبة مع الوقت
+        function increaseDifficulty() {
+            baseRoadSpeed += 1;
+            gameTime += 15;
+        }
+        
+        // تحديث واجهة اللاعب
+        function updateUI() {
+            scoreElement.textContent = score;
+            coinsElement.textContent = coins;
+            timeElement.textContent = gameTime + 's';
+        }
+        
+        // إنشاء سيارة معادية
+        function createEnemyCar() {
+            const now = Date.now();
+            if (now - lastCarTime < 1500) return;
+            
+            lastCarTime = now;
+            
+            const width = 60;
+            const height = 110;
+            const lane = Math.floor(Math.random() * 3);
+            const x = [
+                canvas.width * 0.25 - width/2,
+                canvas.width * 0.5 - width/2,
+                canvas.width * 0.75 - width/2
+            ][lane];
+            
+            const speed = 5 + Math.random() * 3 + baseRoadSpeed / 5;
+            
+            cars.push({
+                x: x,
+                y: -height,
+                width: width,
+                height: height,
+                speed: speed,
+                lane: lane
+            });
+        }
+        
+        // إنشاء عملة على الطريق
+        function createCoin() {
+            const now = Date.now();
+            if (now - lastCoinTime < 3000) return;
+            
+            lastCoinTime = now;
+            
+            const width = 30;
+            const height = 30;
+            const lane = Math.floor(Math.random() * 3);
+            const x = [
+                canvas.width * 0.25 - width/2,
+                canvas.width * 0.5 - width/2,
+                canvas.width * 0.75 - width/2
+            ][lane];
+            
+            coinsOnRoad.push({
+                x: x,
+                y: -height,
+                width: width,
+                height: height,
+                value: 10 + Math.floor(Math.random() * 20),
+                collected: false
+            });
+        }
+        
+        // كشف التصادمات
+        function checkCollision(obj1, obj2) {
+            return obj1.x < obj2.x + obj2.width &&
+                   obj1.x + obj1.width > obj2.x &&
+                   obj1.y < obj2.y + obj2.height &&
+                   obj1.y + obj1.height > obj2.y;
+        }
+        
+        // التحكم باللمس
+        function handleTouchStart(e) {
+            e.preventDefault();
+            touchX = e.touches[0].clientX;
+        }
+        
+        function handleTouchMove(e) {
+            e.preventDefault();
+            if (!touchX) return;
+            
+            const newTouchX = e.touches[0].clientX;
+            const deltaX = newTouchX - touchX;
+            
+            player.targetX = Math.max(canvas.width * 0.2 + 10, 
+                Math.min(canvas.width * 0.8 - player.width - 10, 
+                player.targetX + deltaX * 1.5));
+                
+            touchX = newTouchX;
+        }
+        
+        function handleTouchEnd() {
+            touchX = null;
+        }
+        
+        // إنهاء اللعبة
+        function endGame() {
+            gameRunning = false;
+            finalScoreElement.textContent = score;
+            finalCoinsElement.textContent = coins;
+            gameOverScreen.style.display = 'flex';
+            clearInterval(difficultyInterval);
+            cancelAnimationFrame(animationId);
+        }
+        
+        // تحديث حالة اللعبة
+        function update(timestamp) {
+            if (!gameRunning) return;
+            
+            const deltaTime = timestamp - lastTime;
+            lastTime = timestamp;
+            
+            // حساب الوقت المنقضي
+            gameTime = Math.floor((Date.now() - gameStartTime) / 1000);
+            
+            // تحريك اللاعب نحو الهدف
+            const dx = player.targetX - player.x;
+            player.x += dx * 0.1;
+            
+            // زيادة السرعة تدريجياً
+            if (player.speed < player.maxSpeed) {
+                player.speed += player.acceleration * (deltaTime / 16);
+            }
+            
+            // تحديث علامات الطريق
+            for (let i = 0; i < roadMarkings.length; i++) {
+                roadMarkings[i].y += baseRoadSpeed + player.speed;
+                if (roadMarkings[i].y > canvas.height) {
+                    roadMarkings[i].y = -40;
+                }
+            }
+            
+            // إنشاء سيارات معادية
+            createEnemyCar();
+            
+            // إنشاء عملات
+            createCoin();
+            
+            // تحديث السيارات المعادية
+            for (let i = cars.length - 1; i >= 0; i--) {
+                cars[i].y += cars[i].speed + player.speed;
+                
+                // كشف التصادم مع اللاعب
+                if (checkCollision(player, cars[i])) {
+                    endGame();
+                    return;
+                }
+                
+                // إزالة السيارات التي تجاوزت الشاشة
+                if (cars[i].y > canvas.height) {
+                    score += 10;
+                    cars.splice(i, 1);
+                }
+            }
+            
+            // تحديث العملات
+            for (let i = coinsOnRoad.length - 1; i >= 0; i--) {
+                coinsOnRoad[i].y += baseRoadSpeed + player.speed;
+                
+                // كشف جمع العملة
+                if (!coinsOnRoad[i].collected && checkCollision(player, coinsOnRoad[i])) {
+                    coins += coinsOnRoad[i].value;
+                    score += coinsOnRoad[i].value;
+                    coinsOnRoad[i].collected = true;
+                }
+                
+                // إزالة العملات التي تجاوزت الشاشة
+                if (coinsOnRoad[i].y > canvas.height || coinsOnRoad[i].collected) {
+                    coinsOnRoad.splice(i, 1);
+                }
+            }
+            
+            // منع الخروج من الطريق
+            player.x = Math.max(canvas.width * 0.2 + 10, 
+                Math.min(canvas.width * 0.8 - player.width - 10, player.x));
+            
+            updateUI();
+            draw();
+            
+            animationId = requestAnimationFrame(update);
+        }
+        
+        // رسم اللعبة
+        function draw() {
+            // مسح الشاشة
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // رسم الطريق
+            ctx.fillStyle = '#333';
+            ctx.fillRect(canvas.width * 0.2, 0, canvas.width * 0.6, canvas.height);
+            
+            // حواف الطريق
+            ctx.strokeStyle = '#ffcc00';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(canvas.width * 0.2, 0);
+            ctx.lineTo(canvas.width * 0.2, canvas.height);
+            ctx.moveTo(canvas.width * 0.8, 0);
+            ctx.lineTo(canvas.width * 0.8, canvas.height);
+            ctx.stroke();
+            
+            // علامات الطريق
+            ctx.fillStyle = '#fff';
+            for (let i = 0; i < roadMarkings.length; i++) {
+                ctx.fillRect(roadMarkings[i].x, roadMarkings[i].y, roadMarkings[i].width, roadMarkings[i].height);
+            }
+            
+            // رسم العملات
+            for (let i = 0; i < coinsOnRoad.length; i++) {
+                if (!coinsOnRoad[i].collected) {
+                    ctx.save();
+                    ctx.translate(coinsOnRoad[i].x + coinsOnRoad[i].width/2, coinsOnRoad[i].y + coinsOnRoad[i].height/2);
+                    ctx.rotate(Date.now() / 200);
+                    ctx.drawImage(
+                        createCoinImage(),
+                        -coinsOnRoad[i].width/2,
+                        -coinsOnRoad[i].height/2,
+                        coinsOnRoad[i].width,
+                        coinsOnRoad[i].height
+                    );
+                    ctx.restore();
+                    
+                    // رسم قيمة العملة
+                    ctx.fillStyle = '#FFD700';
+                    ctx.font = 'bold 14px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(
+                        coinsOnRoad[i].value,
+                        coinsOnRoad[i].x + coinsOnRoad[i].width/2,
+                        coinsOnRoad[i].y + coinsOnRoad[i].height + 15
+                    );
+                }
+            }
+            
+            // رسم السيارات المعادية
+            for (let i = 0; i < cars.length; i++) {
+                ctx.drawImage(
+                    carImages[Math.floor(Math.random() * 4) + 2], // اختيار سيارة عشوائية من المتجر
+                    cars[i].x,
+                    cars[i].y,
+                    cars[i].width,
+                    cars[i].height
+                );
+            }
+            
+            // رسم سيارة اللاعب
+            ctx.drawImage(
+                carImages[playerCar.id],
+                player.x,
+                player.y,
+                player.width,
+                player.height
+            );
+        }
+        
+        // إنشاء صورة عملة
+        function createCoinImage() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 30;
+            canvas.height = 30;
+            const ctx = canvas.getContext('2d');
+            
+            ctx.fillStyle = '#FFD700';
+            ctx.beginPath();
+            ctx.arc(15, 15, 12, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#FFC000';
+            ctx.beginPath();
+            ctx.arc(15, 15, 10, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#FFD700';
+            ctx.font = 'bold 10px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('$', 15, 15);
+            
+            return canvas;
+        }
+        
+        // عرض متجر السيارات
+        function showShop() {
+            gameRunning = false;
+            shopScreen.style.display = 'flex';
+            renderShopCars();
+        }
+        
+        // إخفاء متجر السيارات
+        function hideShop() {
+            shopScreen.style.display = 'none';
+            gameRunning = true;
+            lastTime = performance.now();
+            animationId = requestAnimationFrame(update);
+        }
+        
+        // عرض السيارات في المتجر
+        function renderShopCars() {
+            carsGrid.innerHTML = '';
+            
+            availableCars.forEach(car => {
+                const carItem = document.createElement('div');
+                carItem.className = `car-item ${car.selected ? 'selected' : ''}`;
+                carItem.dataset.id = car.id;
+                
+                carItem.innerHTML = `
+                    <div class="car-image" style="background-image: url('${createCarImageDataURL(car.color, car.id === selectedCarId)}')"></div>
+                    <div class="car-name">${car.name}</div>
+                    <div class="car-price">${car.owned ? 'تم الشراء' : car.price + ' نقطة'}</div>
+                    <div class="car-stats">
+                        السرعة: ${car.speed}<br>
+                        التسارع: ${car.acceleration.toFixed(1)}
+                    </div>
+                `;
+                
+                carItem.addEventListener('click', () => selectCar(car.id));
+                carsGrid.appendChild(carItem);
+            });
+            
+            updateBuyButton();
+        }
+        
+        // إنشاء صورة سيارة كـ Data URL
+        function createCarImageDataURL(color, isPlayer = false) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 100;
+            canvas.height = 180;
+            const ctx = canvas.getContext('2d');
+            
+            // هيكل السيارة
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(20, 20);
+            ctx.lineTo(80, 20);
+            ctx.quadraticCurveTo(90, 25, 90, 35);
+            ctx.lineTo(90, 145);
+            ctx.quadraticCurveTo(90, 155, 80, 160);
+            ctx.lineTo(20, 160);
+            ctx.quadraticCurveTo(10, 155, 10, 145);
+            ctx.lineTo(10, 35);
+            ctx.quadraticCurveTo(10, 25, 20, 20);
+            ctx.closePath();
+            ctx.fill();
+            
+            // خطوط تصميم السيارة
+            ctx.strokeStyle = isPlayer ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(25, 25);
+            ctx.lineTo(75, 25);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(25, 145);
+            ctx.lineTo(75, 145);
+            ctx.stroke();
+            
+            // النوافذ
+            ctx.fillStyle = isPlayer ? 'rgba(200, 230, 255, 0.8)' : 'rgba(165, 216, 255, 0.7)';
+            ctx.fillRect(30, 25, 40, 30);
+            ctx.fillRect(30, 90, 40, 30);
+            
+            // المصابيح الأمامية
+            ctx.fillStyle = '#fffac8';
+            ctx.beginPath();
+            ctx.arc(85, 35, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(85, 135, 5, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // العجلات
+            ctx.fillStyle = '#1a1a1a';
+            ctx.beginPath();
+            ctx.arc(25, 45, 10, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(25, 135, 10, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(75, 45, 10, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(75, 135, 10, 0, Math.PI * 2);
+            ctx.fill();
+            
+            return canvas.toDataURL();
+        }
+        
+        // اختيار سيارة من المتجر
+        function selectCar(carId) {
+            availableCars.forEach(car => {
+                car.selected = car.id === carId;
+            });
+            
+            selectedCarId = carId;
+            renderShopCars();
+        }
+        
+        // تحديث زر الشراء
+        function updateBuyButton() {
+            const selectedCar = availableCars.find(car => car.id === selectedCarId);
+            
+            if (selectedCar.owned) {
+                buyCarBtn.textContent = 'محددة';
+                buyCarBtn.disabled = true;
+                buyCarBtn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+            } else if (coins >= selectedCar.price) {
+                buyCarBtn.textContent = `شراء (${selectedCar.price} نقطة)`;
+                buyCarBtn.disabled = false;
+                buyCarBtn.style.background = 'linear-gradient(135deg, #f8bb22, #f37335)';
+            } else {
+                buyCarBtn.textContent = `نقاط غير كافية (${selectedCar.price} نقطة)`;
+                buyCarBtn.disabled = true;
+                buyCarBtn.style.background = 'linear-gradient(135deg, #6b7280, #4b5563)';
+            }
+        }
+        
+        // شراء سيارة
+        function buyCar() {
+            const selectedCar = availableCars.find(car => car.id === selectedCarId);
+            
+            if (coins >= selectedCar.price && !selectedCar.owned) {
+                coins -= selectedCar.price;
+                selectedCar.owned = true;
+                playerCar = {...selectedCar};
+                player.maxSpeed = playerCar.speed;
+                player.acceleration = playerCar.acceleration;
+                
+                // إعادة إنشاء صور السيارات مع السيارة الجديدة
+                createCarImages();
+                
+                renderShopCars();
+                updateUI();
+            }
+        }
+        
+        // بدء اللعبة
+        function startGame() {
+            startScreen.style.display = 'none';
+            gameContainer.style.display = 'block';
+            initGame();
+            lastTime = performance.now();
+            animationId = requestAnimationFrame(update);
+        }
+        
+        // إعادة تشغيل اللعبة
+        function restartGame() {
+            gameOverScreen.style.display = 'none';
+            initGame();
+            lastTime = performance.now();
+            animationId = requestAnimationFrame(update);
+        }
+        
+        // أحداث التحكم
+        startBtn.addEventListener('click', startGame);
+        restartBtn.addEventListener('click', restartGame);
+        shopBtn.addEventListener('click', showShop);
+        backToGameBtn.addEventListener('click', hideShop);
+        buyCarBtn.addEventListener('click', buyCar);
+        
+        canvas.addEventListener('touchstart', handleTouchStart);
+        canvas.addEventListener('touchmove', handleTouchMove);
+        canvas.addEventListener('touchend', handleTouchEnd);
+        
+        // التحكم بالفأرة
+        canvas.addEventListener('mousemove', (e) => {
+            if (!gameRunning) return;
+            player.targetX = Math.max(canvas.width * 0.2 + 10, 
+                Math.min(canvas.width * 0.8 - player.width - 10, 
+                e.clientX - player.width / 2));
+        });
+        
+        // إنشاء صور السيارات عند التحميل
+        createCarImages();
+    </script>
+</body>
+</html>
